@@ -5,7 +5,7 @@ import (
 	"shopping/model"
 )
 
-// 查询购物车内容，可用于结算
+// 查询购物车内容
 func SelectCart(db *sql.DB, userId int) (model.Cart, error) {
 	cart := model.Cart{}
 	row := db.QueryRow("select * from shopping.cart where user_id= ?", userId)
@@ -19,7 +19,7 @@ func SelectCart(db *sql.DB, userId int) (model.Cart, error) {
 	return cart, nil
 }
 
-// 检验商品(与订单处连接，查询购物车内商品是否存在，传入商品名称）
+// 检验商品
 func IsCartExist(goodId int) bool {
 	cart, err := SelectCart(db, goodId)
 	if err != nil {
@@ -44,18 +44,13 @@ func InsertCart(cart model.Cart) error {
 }
 
 // 清空购物车
-func DeleteCart(cart model.Cart) error {
-	_, err := SqlConn().Exec("delete from shopping.cart where user_id=?", cart.Userid)
+func DeleteCart(userId int) error {
+	_, err := SqlConn().Exec("delete from shopping.cart where user_id=?", userId)
 	return err
 }
 
-// - 删除商品
+// - 删除某个商品
 func DeleteCart01(cart model.Cart) error {
 	_, err := SqlConn().Exec("delete from shopping.cart where good_id=? and user_id", cart.GoodId, cart.Userid)
 	return err
-}
-
-// - 选择部分商品进行结算(传入订单数据库）
-func Pay(good_id int) {
-
 }

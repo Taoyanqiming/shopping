@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"database/sql"
+	"fmt"
 	"shopping/model"
 	"unicode"
 )
@@ -74,17 +74,12 @@ func SelectUser2(account string) (model.User, error) {
 func IsAccountExist(account string) bool {
 	user, err := SelectUser2(account)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			//查询是否返回数据为空，用于？？
-			return false
-		}
-		return false
+		fmt.Println("账号不存在")
 	}
-	if user.Account == account {
-
-		return false
+	if user.UserId != 0 {
+		return true
 	}
-	return true
+	return false
 
 }
 
@@ -92,10 +87,7 @@ func IsAccountExist(account string) bool {
 func IsPasswordCorrect(account, password string) bool {
 	user, err := SelectUser2(account)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return false
-		}
-		return false
+		fmt.Println("账号不存在")
 	}
 	if user.Password != password {
 		return false
@@ -106,6 +98,12 @@ func IsPasswordCorrect(account, password string) bool {
 // 数据库改变用户基本信息
 func ChangeUserInfo(name string, sex byte, userid int) error {
 	_, err := SqlConn().Exec("update shopping.user set name=? ,sex=?where user_id=?", name, sex, userid)
+	return err
+}
+
+// 改密码
+func ChangePassword(old, new string, userid int) error {
+	_, err := db.Exec("update shopping.user set password=? where user_id=?", new, old, userid)
 	return err
 }
 

@@ -1,7 +1,6 @@
 package dao
 
 import (
-	"database/sql"
 	"shopping/model"
 )
 
@@ -12,15 +11,15 @@ func Collect(collect model.Collect) error {
 }
 
 // 取消收藏
-func Cancel(goodId int) error {
-	_, err := SqlConn().Exec("delete from shopping.collect where goodid = ?", goodId)
+func Cancel(userId, goodId int) error {
+	_, err := SqlConn().Exec("delete from shopping.collect where use_id=? and good_id = ?", userId, goodId)
 	return err
 }
 
 // 查询收藏
-func SelectCollect(goodId int) (model.Collect, error) {
+func SelectCollect(userId, goodId int) (model.Collect, error) {
 	var collect = model.Collect{}
-	row := db.QueryRow("select * from shopping.collect where goodid= ?", goodId)
+	row := db.QueryRow("select * from shopping.collect where good_id=? and user_id= ?", goodId, userId)
 	if row != nil {
 		return collect, row.Err()
 	}
@@ -32,8 +31,8 @@ func SelectCollect(goodId int) (model.Collect, error) {
 }
 
 // 检查是否已经收藏
-func IsCollectExist(goodId int) bool {
-	c, err := SelectCollect(goodId)
+/*func IsCollectExist(userId,goodId int) bool {
+	c, err := SelectCollect(userId,goodId)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false
@@ -44,4 +43,4 @@ func IsCollectExist(goodId int) bool {
 		return false
 	}
 	return true
-}
+}*/

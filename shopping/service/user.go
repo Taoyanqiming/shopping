@@ -43,10 +43,10 @@ func Register(ctx *gin.Context) {
 	}
 
 	// 验证账号是否已经存在
-	if dao.IsAccountExist(account) {
+	/*if !dao.IsAccountExist(account) {
 		response.Response(ctx, http.StatusBadRequest, nil, "该账号已经存在")
 		return
-	}
+	}*/
 
 	// 保存新用户到数据库
 	newUser := model.User{
@@ -96,7 +96,7 @@ func Login(ctx *gin.Context) {
 
 	// 判断账号是否已经存在
 	if dao.IsAccountExist(account) {
-		response.Response(ctx, http.StatusBadRequest, nil, "该账号已经存在")
+		response.Response(ctx, http.StatusBadRequest, nil, "该账号不存在")
 		return
 	}
 
@@ -105,6 +105,7 @@ func Login(ctx *gin.Context) {
 		response.Failure(ctx, nil, "密码不正确")
 		return
 	}
+
 	var user model.User
 
 	// 生成token
@@ -199,7 +200,11 @@ func UploadHead(ctx *gin.Context) {
 
 // 改密码
 func UpdatePassword(ctx *gin.Context) {
-	var requestUser model.User
+	type Password struct {
+		new string
+		old string
+	}
+	var requestUser Password
 
 	// 数据绑定
 	err := ctx.ShouldBind(&requestUser)
@@ -210,8 +215,8 @@ func UpdatePassword(ctx *gin.Context) {
 	}
 
 	// 获取数据
-	oldPassword := requestUser.Password
-	newPassword := ctx.PostForm("new_password")
+	oldPassword := requestUser.old
+	newPassword := requestUser.new
 	//token
 	user, _ := ctx.Get("user")
 	userId := user.(model.User).UserId
@@ -238,9 +243,9 @@ func UpdatePassword(ctx *gin.Context) {
 		response.Response(ctx, http.StatusUnprocessableEntity, nil, "密码不合法，账号长度为8-16字符，可以使用英文、数字和特殊字符")
 		return
 	}
-	//更新
 
-	db.Exec("update shopping.user set password=? where account=?", newPassword, User.Account)
+	h := dao.ChangePassword(oldPassword, newPassword, userId)
+	fmt.Println(h)
 	// 更新用户信息成功
 	response.Success(ctx, gin.H{}, "更新用户信息成功")
 }
@@ -250,7 +255,7 @@ func Charge(ctx *gin.Context) {
 	var requestUser model.User
 
 	// 数据绑定
-	err := ctx.ShouldBind(&requestUser) //有问题err和下边的err 什么关系？
+	err := ctx.ShouldBind(&requestUser)
 
 	if err != nil {
 		log.Printf("更新用户绑定出错 error : %v", err.Error())
@@ -262,13 +267,12 @@ func Charge(ctx *gin.Context) {
 	user, _ := ctx.Get("user")
 	userId := user.(model.User).UserId
 
-	// 将该用户取出(根据token携带的userid查询数据库获得账号，输入账户改用户信息）
 	var db *sql.DB
 	var User model.User
 	row := db.QueryRow("select * from shopping.user where user_id= ?", userId)
-	err = row.Scan(&User.Balance, &User.Account)
-	if err != nil {
-		log.Println(err)
+	err1 := row.Scan(&User.Balance, &User.Account)
+	if err1 != nil {
+		log.Println(err1)
 		return
 	}
 	fmt.Println(User)
@@ -276,7 +280,8 @@ func Charge(ctx *gin.Context) {
 	var newUser model.User
 	newUser.Balance = User.Balance + balance
 	//保存数据
-	dao.ChargeMoney(User.Account, newUser.Balance)
+	i := dao.ChargeMoney(User.Account, newUser.Balance)
+	fmt.Println(i)
 	response.Success(ctx, gin.H{}, "用户充值成功")
 }
 
@@ -291,8 +296,10 @@ func Check(ctx *gin.Context) {
 		fmt.Println("")
 	}
 	fmt.Println("")
+	response.Success(ctx, err, "查询成功")
 }
 
+// 填写地址
 func Address(ctx *gin.Context) {
 	var requestUser = model.User{}
 	// 绑定数据
@@ -302,11 +309,12 @@ func Address(ctx *gin.Context) {
 		log.Printf("注册数据绑定失败 error : %v", err.Error())
 		return
 	}
+
 	user, _ := ctx.Get("user")
 	userId := user.(model.User).UserId
 	// 获取数据
 	address := requestUser.Address
 	phone := requestUser.Phone
-	dao.Address(address, phone, userId)
-	response.Success(ctx, gin.H{}, "填写成功")
+	a := dao.Address(address, phone, userId)
+	response.Success(ctx, gin.H{"a": a}, "填写成功")
 }

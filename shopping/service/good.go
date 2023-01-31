@@ -2,6 +2,7 @@ package service
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -69,11 +70,10 @@ func UploadPic(ctx *gin.Context) {
 	name := ctx.Param("name")
 	var db sql.DB
 
-	row := db.QueryRow("select * from shopping.good where name= ?", name)
+	row := db.QueryRow("select * from shopping.good where name= ?", name).Scan(&good)
 	if row != nil {
 		return
 	}
-	row.Scan(&good)
 	if good.Number == 0 {
 		response.Failure(ctx, nil, "该商品不存在")
 		return
@@ -113,17 +113,16 @@ func UploadPic(ctx *gin.Context) {
 
 // 商品详情页
 func GetGoodDetail(ctx *gin.Context) {
-	name := ctx.Param("name")
+	goodId := ctx.Param("goodId")
 
 	var good model.Good
 
 	var db sql.DB
 
-	row := db.QueryRow("select * from shopping.good where name= ?", name)
+	row := db.QueryRow("select * from shopping.good where good_id= ?", goodId).Scan(&good)
 	if row != nil {
 		return
 	}
-	row.Scan(&good)
 	if good.Number == 0 {
 		response.Failure(ctx, nil, "该商品不存在")
 		return
@@ -168,7 +167,8 @@ func BuyGood(ctx *gin.Context) {
 
 	// 商品数量减少 保存
 	b.Number -= goodCount
-	dao.Number(b.Number, goodId)
+	j := dao.Number(b.Number, goodId)
+	fmt.Println(j)
 
 	//填写用户信息
 
@@ -184,13 +184,19 @@ func BuyGood(ctx *gin.Context) {
 		UserPhone:   a.Phone,
 	}
 	//保存订单
-	dao.CreatOrder(order)
+	k := dao.CreatOrder(order)
+	fmt.Println(k)
+
 	//余额减少
 	a.Balance -= float32(goodCount) * b.Price
-	dao.ChargeMoney(a.Account, a.Balance)
+	l := dao.ChargeMoney(a.Account, a.Balance)
+	fmt.Println(l)
+
 	//销量+
 	b.Sale += goodCount
-	dao.Sale(b.Sale, goodId)
+	m := dao.Sale(b.Sale, goodId)
+	fmt.Println(m)
+
 	response.Success(ctx, gin.H{"order": order}, "购买成功")
 }
 
@@ -199,11 +205,10 @@ func PriceDESC(ctx *gin.Context) {
 	name := ctx.Param("name")
 	var good model.Good
 	var db sql.DB
-	row := db.QueryRow("select * from shopping.good where name= ? order by price DESC ", name)
+	row := db.QueryRow("select * from shopping.good where name= ? order by price DESC ", name).Scan(&good)
 	if row != nil {
 		return
 	}
-	row.Scan(&good)
 	if good.Number == 0 {
 		response.Failure(ctx, nil, "该商品不存在")
 		return
@@ -219,11 +224,10 @@ func PriceASC(ctx *gin.Context) {
 	name := ctx.Param("name")
 	var good model.Good
 	var db sql.DB
-	row := db.QueryRow("select * from shopping.good where name= ? order by price ASC ", name)
+	row := db.QueryRow("select * from shopping.good where name= ? order by price  ", name).Scan(&good)
 	if row != nil {
 		return
 	}
-	row.Scan(&good)
 	if good.Number == 0 {
 		response.Failure(ctx, nil, "该商品不存在")
 		return
